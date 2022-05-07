@@ -4,20 +4,19 @@ package com.mostaron.omega.core;
  * the starter for omega
  * description: ApplicationStart <br>
  * date: 2022/5/7 10:46 <br>
- * author: neil <br>
+ * author: Neil <br>
  * version: 0.1 <br>
  */
 public class ApplicationStart {
 
-    /*
+    /**
      * description: rabbit hole <br>
      * version: 0.1 <br>
      * date: 2022/5/7 11:01 <br>
-     * author: neil <br>
+     * author: Neil <br>
      * 
-     * @param startClass
-     * @return void
-     */ 
+     * @param startClass start class
+     */
     public static <T> void start(Class<T> startClass) {
         //TODO: 1 扫描当前Class所在路径及其子路径下，包含Component注解的类
 
