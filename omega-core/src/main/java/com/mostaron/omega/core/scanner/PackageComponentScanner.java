@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.util.Enumeration;
@@ -28,13 +29,25 @@ import java.util.stream.Collectors;
  */
 public class PackageComponentScanner {
 
+    /**
+     * 资源URL协议类型-jar
+     */
     private static final String PROTOCOL_JAR = "jar";
+    /**
+     * 资源URL协议类型-file
+     */
     private static final String PROTOCOL_FILE = "file";
+
     private static final Logger logger = LoggerFactory.getLogger(PackageComponentScanner.class);
 
+    /**
+     * Class文件后缀
+     */
     private static final String CLASS_SUFFIX = ".class";
     //Patterns to filter innerClass
+
     private static final Pattern INNER_PATTERN = java.util.regex.Pattern.compile("\\$(\\d+).", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final int MAX_RECURSION = 5;
 
     /**
      * description: doScan <br>
@@ -93,7 +106,7 @@ public class PackageComponentScanner {
     private static void iterateJarFile(String basePackage, URL url, Set<String> classNameSet) throws IOException {
         JarURLConnection conn = (JarURLConnection) url.openConnection();
         if (null == conn) {
-            throw new OmegaCommonException("Cannot open connection to Jar file: "+ url.getPath());
+            throw new OmegaCommonException("Cannot open connection to Jar file: " + url.getPath());
         }
 
         JarFile jarFile = conn.getJarFile();
@@ -102,11 +115,11 @@ public class PackageComponentScanner {
         logger.debug("Processing Jar file: [{}]", jarFile.getName());
         // 遍历Jar包中的实体
         Enumeration<JarEntry> entries = jarFile.entries();
-        while(entries.hasMoreElements()) {
+        while (entries.hasMoreElements()) {
             JarEntry entry = entries.nextElement();
             String entryName = entry.getName();
             //过滤非Class文件及非basePackage包下的文件
-            if(!entryName.endsWith(CLASS_SUFFIX)
+            if (!entryName.endsWith(CLASS_SUFFIX)
                     || !entryName.replace("/", ".").startsWith(basePackage)) {
                 continue;
             }
@@ -122,7 +135,6 @@ public class PackageComponentScanner {
      * version: 1.0 <br>
      * date: 2022/5/9 14:31 <br>
      * author: Neil <br>
-     *
      */
     private static void iterateClassFile(File dir, Set<String> classNameSet) {
         if (dir.isDirectory()) {
@@ -148,7 +160,7 @@ public class PackageComponentScanner {
      * date: 2022/5/9 14:33 <br>
      * author: Neil <br>
      *
-     * @param name className
+     * @param name     className
      * @param classSet result class set
      */
     private static void addToClassSet(String name, Set<String> classSet) {
@@ -167,6 +179,7 @@ public class PackageComponentScanner {
         classSet.add(name.substring(0, name.lastIndexOf(CLASS_SUFFIX)));
     }
 
+
     /**
      * Parse set of className to set of Classes
      * description: parseClassSet <br>
@@ -175,7 +188,7 @@ public class PackageComponentScanner {
      * author: Neil <br>
      *
      * @param classNameSet Set of class names
-     * @return java.util.Set<java.lang.Class<?>>
+     * @return java.util.Set<java.lang.Class < ?>>
      */
     private static Set<Class<?>> parseClassSet(Set<String> classNameSet) {
 
@@ -206,20 +219,55 @@ public class PackageComponentScanner {
     }
 
     /**
-     * check if class is using {@code @Component} annotation
+     * check if class is using {@code @Component} annotation, or it's annotation using {@code @Component}<br>
+     * 由于会递归检查注解本身是否使用了@Component注解，所以使用递归深度计数器。
+     * 虽然方法本身会过滤java包下的所有注解，但做为工具被使用时，若调用方编写了自定义注解，且这些注解也存在相互使用，仍然有栈溢出的风险。
+     * 同时如果限定仅检查com.mostaron包，则将严重影响本工具的扩展性，基于这些原因，增加了递归深度计数器，以限定注解递归的深度。
      * description: isComponent <br>
      * version: 1.0 <br>
      * date: 2022/5/9 15:45 <br>
      * author: Neil <br>
      *
      * @param clazz
+     * @param recursionCount
+     * @return boolean
+     */
+    private static boolean isComponent(Class<?> clazz, int recursionCount) {
+
+        Annotation[] annotations = clazz.getAnnotations();
+
+        for (Annotation annotation : annotations) {
+            // 过滤Java自带的注解类
+            if (annotation.annotationType().getPackageName().startsWith("java.")) {
+                continue;
+            }
+            // 需要使用Annotation.annotationType()获取注解的Class对象
+            // 若使用.getClass，将得到Jdk动态代理的对象，而非类对象
+            if (annotation.annotationType() == Component.class) {
+                return true;
+            }
+            if (recursionCount > MAX_RECURSION) {
+                return false;
+            }
+            return isComponent(annotation.annotationType(), recursionCount + 1);
+
+        }
+
+        return false;
+    }
+
+    /**
+     * 默认检查类，初始化递归计数器
+     * description: isComponent <br>
+     * version: 1.0 <br>
+     * date: 2022/5/9 17:03 <br>
+     * author: Neil <br>
+     *
+     * @param clazz
      * @return boolean
      */
     private static boolean isComponent(Class<?> clazz) {
-
-        Component annotation = clazz.getAnnotation(Component.class);
-
-        return null != annotation;
+        return isComponent(clazz, 1);
     }
 
 }
