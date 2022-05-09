@@ -21,7 +21,7 @@ import java.util.stream.Collectors;
 
 
 /**
- * Based on package path, iterate all classes using {@code @Component} annotation.<br>
+ * 基于basePackage，遍历使用 {@code @Component} 注解的Class对象.<br>
  * description: PackageComponentScanner <br>
  * date: 2022/5/7 11:55 <br>
  * author: Neil <br>
@@ -50,6 +50,7 @@ public class PackageComponentScanner {
     private static final int MAX_RECURSION = 5;
 
     /**
+     * 执行扫描主方法， 扫描basePackage列表下的所有使用@Component注解的Class对象<br>
      * description: doScan <br>
      * version: 0.1 <br>
      * date: 2022/5/7 12:02 <br>
@@ -62,47 +63,71 @@ public class PackageComponentScanner {
 
         Assert.notNull(basePackages, "basePackage cannot be null");
 
-        ClassLoader classLoader = PackageComponentScanner.class.getClassLoader();
-        Set<Class<?>> classSet;
+        Set<Class<?>> classSet = new HashSet<>();
         for (String basePackage : basePackages) {
             try {
-                basePackage = basePackage.replace(".", "/");
-                logger.debug("Scanning for basePackage:{}", basePackage);
-                Enumeration<URL> classUrlEnum = classLoader.getResources(basePackage);
-                logger.debug("Scanned basePackage, founded:{}", classUrlEnum.hasMoreElements());
 
-                //遍历URL，获取Class路径列表
-                Set<String> classNameSet = new HashSet<>();
-                while (classUrlEnum.hasMoreElements()) {
-                    URL classUrl = classUrlEnum.nextElement();
-                    logger.debug("scanning classes in package[{}:{}]", classUrl.getProtocol(), classUrl.getFile());
-                    if (classUrl.getProtocol().equals(PROTOCOL_JAR)) {
+                classSet.addAll(doScan(basePackage));
 
-                        //处理Jar类型的Class文件
-                        iterateJarFile(basePackage, classUrl, classNameSet);
 
-                    } else if (classUrl.getProtocol().equals(PROTOCOL_FILE)) {
-
-                        //处理File类型的Class文件
-                        iterateClassFile(new File(classUrl.getFile()), classNameSet);
-                    }
-
-                }
-
-//                classNameSet.forEach(item -> logger.debug("class found:{}", item));
-
-                //遍历Class路径列表， 反射生成Class
-                classSet = parseClassSet(classNameSet);
-
-                classSet.forEach(clazz -> logger.debug("Valid class: [{}]", clazz.getName()));
             } catch (IOException e) {
                 logger.error("Exception while scanning packages", e);
                 System.exit(0);
             }
+            classSet.forEach(clazz -> logger.debug("Valid class: [{}]", clazz.getName()));
         }
-        return null;
+        return classSet;
     }
 
+    /**
+     * 扫描单一basePackage，返回使用@Component注解的Class对象<br>
+     * description: doScan <br>
+     * version: 1.0 <br>
+     * date: 2022/5/9 17:41 <br>
+     * author: Neil <br>
+     *
+     * @param basePackage
+     * @return java.util.Set<java.lang.Class<?>>
+     */
+    private static Set<Class<?>> doScan(String basePackage) throws IOException {
+        ClassLoader classLoader = PackageComponentScanner.class.getClassLoader();
+        basePackage = basePackage.replace(".", "/");
+        logger.debug("Scanning for basePackage:{}", basePackage);
+        Enumeration<URL> classUrlEnum = classLoader.getResources(basePackage);
+        logger.debug("Scanned basePackage, founded:{}", classUrlEnum.hasMoreElements());
+
+        //遍历URL，获取Class路径列表
+        Set<String> classNameSet = new HashSet<>();
+        while (classUrlEnum.hasMoreElements()) {
+            URL classUrl = classUrlEnum.nextElement();
+            logger.debug("scanning classes in package[{}:{}]", classUrl.getProtocol(), classUrl.getFile());
+            if (classUrl.getProtocol().equals(PROTOCOL_JAR)) {
+
+                //处理Jar类型的Class文件
+                iterateJarFile(basePackage, classUrl, classNameSet);
+
+            } else if (classUrl.getProtocol().equals(PROTOCOL_FILE)) {
+
+                //处理File类型的Class文件
+                iterateClassFile(new File(classUrl.getFile()), classNameSet);
+            }
+
+        }
+        //遍历Class路径列表， 反射生成Class
+        return parseClassSet(classNameSet);
+    }
+
+    /**
+     * 遍历处理Jar类型的文件<br>
+     * description: iterateJarFile <br>
+     * version: 1.0 <br>
+     * date: 2022/5/9 17:42 <br>
+     * author: Neil <br>
+     *
+     * @param basePackage
+     * @param url
+     * @param classNameSet
+     */
     private static void iterateJarFile(String basePackage, URL url, Set<String> classNameSet) throws IOException {
         JarURLConnection conn = (JarURLConnection) url.openConnection();
         if (null == conn) {
@@ -130,7 +155,7 @@ public class PackageComponentScanner {
     }
 
     /**
-     * Iterate all class files contained in package
+     * 遍历处理file类型的文件<br>
      * description: iterateClassFile <br>
      * version: 1.0 <br>
      * date: 2022/5/9 14:31 <br>
@@ -154,16 +179,16 @@ public class PackageComponentScanner {
     }
 
     /**
-     * Add class name to set, meanwhile remove inner class and anonymous class
+     * 过滤匿名内部内，将普通类放入结果集<br>
      * description: addToClassSet <br>
      * version: 1.0 <br>
      * date: 2022/5/9 14:33 <br>
      * author: Neil <br>
      *
      * @param name     className
-     * @param classSet result class set
+     * @param classNameSet result class set
      */
-    private static void addToClassSet(String name, Set<String> classSet) {
+    private static void addToClassSet(String name, Set<String> classNameSet) {
 
         //过滤掉匿名内部类
         if (INNER_PATTERN.matcher(name).find()) {
@@ -176,12 +201,12 @@ public class PackageComponentScanner {
             return;
         }
         //去除Class文件名后的.class后缀
-        classSet.add(name.substring(0, name.lastIndexOf(CLASS_SUFFIX)));
+        classNameSet.add(name.substring(0, name.lastIndexOf(CLASS_SUFFIX)));
     }
 
 
     /**
-     * Parse set of className to set of Classes
+     * 将classNameSet中的类名载入到Class结果集中<br>
      * description: parseClassSet <br>
      * version: 1.0 <br>
      * date: 2022/5/9 15:39 <br>
@@ -199,7 +224,7 @@ public class PackageComponentScanner {
     }
 
     /**
-     * Parse className to Class
+     * Parse className to Class<br>
      * description: parseClass <br>
      * version: 1.0 <br>
      * date: 2022/5/9 15:39 <br>
@@ -222,7 +247,7 @@ public class PackageComponentScanner {
      * check if class is using {@code @Component} annotation, or it's annotation using {@code @Component}<br>
      * 由于会递归检查注解本身是否使用了@Component注解，所以使用递归深度计数器。
      * 虽然方法本身会过滤java包下的所有注解，但做为工具被使用时，若调用方编写了自定义注解，且这些注解也存在相互使用，仍然有栈溢出的风险。
-     * 同时如果限定仅检查com.mostaron包，则将严重影响本工具的扩展性，基于这些原因，增加了递归深度计数器，以限定注解递归的深度。
+     * 同时如果限定仅检查com.mostaron包，则将严重影响本工具的扩展性，基于这些原因，增加了递归深度计数器，以限定注解递归的深度。<br>
      * description: isComponent <br>
      * version: 1.0 <br>
      * date: 2022/5/9 15:45 <br>
