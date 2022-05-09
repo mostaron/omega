@@ -14,6 +14,8 @@
 ## 计划演进路线
 
 - 0.1 支持简单通过路径扫描，初始化并缓存被注册托管的Bean，提供工厂方法获取被托管的Bean，提供类似SpringBoot的启动器
+
+    [0.1版开发笔记](document/V-0.1_release_note.md)
 - 0.2 基于代理，实现简单的AOP，增加三级缓存
 - 0.3 完善IOC及AOP功能，并扩展作用域管理等
 - 0.4 增加AutoConfiguration等配置功能
