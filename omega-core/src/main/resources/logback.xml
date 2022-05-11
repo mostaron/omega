@@ -32,7 +32,7 @@ configuration 子节点为 appender、logger、root
             <level>INFO</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/log.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/omega-core-log.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory><!--保存最近30天的日志-->
         </rollingPolicy>
         <encoder>
@@ -48,7 +48,7 @@ configuration 子节点为 appender、logger、root
             <level>error</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_HOME}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_HOME}/omega-core-error.%d{yyyy-MM-dd}.log</fileNamePattern>
             <maxHistory>30</maxHistory><!--保存最近30天的日志-->
         </rollingPolicy>
         <encoder>
@@ -73,7 +73,7 @@ configuration 子节点为 appender、logger、root
         <appender-ref ref="stdout"/>
         <appender-ref ref="infoFile"/>
         <appender-ref ref="errorFile"/>
-        <appender-ref ref="logstash"/>
+<!--        <appender-ref ref="logstash"/>-->
     </root>
 
     <!--为某个包单独配置logger

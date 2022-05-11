@@ -1,6 +1,8 @@
 package com.mostaron.omega.core.scanner;
 
 import com.mostaron.omega.core.annotation.Component;
+import com.mostaron.omega.core.beans.BeanDefinition;
+import com.mostaron.omega.core.beans.consts.ScopeEnum;
 import com.mostaron.omega.core.exception.OmegaCommonException;
 import com.mostaron.omega.core.util.Assert;
 import org.slf4j.Logger;
@@ -11,6 +13,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.JarURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Set;
@@ -59,24 +62,24 @@ public class PackageComponentScanner {
      * @param basePackages package paths for scan
      * @return all classes
      */
-    public static Set<Class<?>> doScan(String[] basePackages) {
+    public static Set<BeanDefinition> doScan(String[] basePackages) {
 
         Assert.notNull(basePackages, "basePackage cannot be null");
 
-        Set<Class<?>> classSet = new HashSet<>();
+        Set<BeanDefinition> beanDefinitionSet = new HashSet<>();
         for (String basePackage : basePackages) {
             try {
 
-                classSet.addAll(doScan(basePackage));
+                beanDefinitionSet.addAll(doScan(basePackage));
 
 
             } catch (IOException e) {
                 logger.error("Exception while scanning packages", e);
                 System.exit(0);
             }
-            classSet.forEach(clazz -> logger.debug("Valid class: [{}]", clazz.getName()));
+            beanDefinitionSet.forEach(clazz -> logger.debug("Valid class: [{}]", clazz.getClassName()));
         }
-        return classSet;
+        return beanDefinitionSet;
     }
 
     /**
@@ -89,7 +92,7 @@ public class PackageComponentScanner {
      * @param basePackage
      * @return java.util.Set<java.lang.Class<?>>
      */
-    private static Set<Class<?>> doScan(String basePackage) throws IOException {
+    private static Set<BeanDefinition> doScan(String basePackage) throws IOException {
         ClassLoader classLoader = PackageComponentScanner.class.getClassLoader();
         basePackage = basePackage.replace(".", "/");
         logger.debug("Scanning for basePackage:{}", basePackage);
@@ -114,7 +117,7 @@ public class PackageComponentScanner {
 
         }
         //遍历Class路径列表， 反射生成Class
-        return parseClassSet(classNameSet);
+        return parseBeanDefinition(classNameSet);
     }
 
     /**
@@ -215,12 +218,33 @@ public class PackageComponentScanner {
      * @param classNameSet Set of class names
      * @return java.util.Set<java.lang.Class < ?>>
      */
-    private static Set<Class<?>> parseClassSet(Set<String> classNameSet) {
+    private static Set<BeanDefinition> parseBeanDefinition(Set<String> classNameSet) {
 
         return classNameSet.stream()
+                // className转class
                 .map(PackageComponentScanner::parseClass)
-                .filter(PackageComponentScanner::isComponent)
+                // class转beanDefinition
+                .map(PackageComponentScanner::parseBeanDefinition)
+                // 过滤非托管类
+                .filter(BeanDefinition::isComponent)
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * 将class转为BeanDefinition
+     * @param clazz
+     * @return
+     */
+    private static BeanDefinition parseBeanDefinition(Class<?> clazz) {
+        BeanDefinition beanDefinition = new BeanDefinition();
+        beanDefinition.setClassName(clazz.getName());
+        beanDefinition.setClazz(clazz);
+
+        ArrayList<Annotation> annotations = new ArrayList<>();
+        beanDefinition.setComponent(isComponent(clazz, annotations));
+        beanDefinition.setAnnotations(annotations);
+
+        return beanDefinition;
     }
 
     /**
@@ -257,7 +281,7 @@ public class PackageComponentScanner {
      * @param recursionCount
      * @return boolean
      */
-    private static boolean isComponent(Class<?> clazz, int recursionCount) {
+    private static boolean isComponent(Class<?> clazz, int recursionCount, ArrayList<Annotation> definedAnnotations) {
 
         Annotation[] annotations = clazz.getAnnotations();
 
@@ -266,6 +290,7 @@ public class PackageComponentScanner {
             if (annotation.annotationType().getPackageName().startsWith("java.")) {
                 continue;
             }
+            definedAnnotations.add(annotation);
             // 需要使用Annotation.annotationType()获取注解的Class对象
             // 若使用.getClass，将得到Jdk动态代理的对象，而非类对象
             if (annotation.annotationType() == Component.class) {
@@ -274,7 +299,7 @@ public class PackageComponentScanner {
             if (recursionCount > MAX_RECURSION) {
                 return false;
             }
-            return isComponent(annotation.annotationType(), recursionCount + 1);
+            return isComponent(annotation.annotationType(), recursionCount + 1, definedAnnotations);
 
         }
 
@@ -291,8 +316,8 @@ public class PackageComponentScanner {
      * @param clazz
      * @return boolean
      */
-    private static boolean isComponent(Class<?> clazz) {
-        return isComponent(clazz, 1);
+    private static boolean isComponent(Class<?> clazz, ArrayList<Annotation> definedAnnotations) {
+        return isComponent(clazz, 1, definedAnnotations);
     }
 
 }
