@@ -1,5 +1,7 @@
 package com.mostaron.omega.core.annotation;
 
+import com.mostaron.omega.core.beans.consts.ScopeEnum;
+
 import java.lang.annotation.*;
 
 /**
@@ -13,5 +15,15 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Component {
+    /**
+     * name
+     * @return
+     */
     String value() default "";
+
+    /**
+     * 作用范围
+     * @return
+     */
+    ScopeEnum scope() default ScopeEnum.SINGLETON;
 }

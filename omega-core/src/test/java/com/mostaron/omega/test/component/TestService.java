@@ -8,6 +8,6 @@ import com.mostaron.omega.core.annotation.Service;
  * author: Neil <br>
  * version: 0.1 <br>
  */
-@Service
+@Service("testService")
 public class TestService {
 }

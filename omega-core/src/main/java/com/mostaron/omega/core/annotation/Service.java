@@ -1,5 +1,7 @@
 package com.mostaron.omega.core.annotation;
 
+import com.mostaron.omega.core.beans.consts.ScopeEnum;
+
 import java.lang.annotation.*;
 
 /**
@@ -13,5 +15,9 @@ import java.lang.annotation.*;
 @Target(ElementType.TYPE)
 @Component
 public @interface Service {
+    @ApplyTo(Component.class)
     String value() default "";
+
+    @ApplyTo(Component.class)
+    ScopeEnum scope() default ScopeEnum.SINGLETON;
 }

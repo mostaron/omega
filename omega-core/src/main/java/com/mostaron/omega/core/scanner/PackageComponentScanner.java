@@ -4,6 +4,7 @@ import com.mostaron.omega.core.annotation.Component;
 import com.mostaron.omega.core.beans.BeanDefinition;
 import com.mostaron.omega.core.beans.consts.ScopeEnum;
 import com.mostaron.omega.core.exception.OmegaCommonException;
+import com.mostaron.omega.core.util.AnnotationMergeUtil;
 import com.mostaron.omega.core.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +14,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.net.JarURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.regex.Pattern;
@@ -72,7 +70,6 @@ public class PackageComponentScanner {
 
                 beanDefinitionSet.addAll(doScan(basePackage));
 
-
             } catch (IOException e) {
                 logger.error("Exception while scanning packages", e);
                 System.exit(0);
@@ -90,7 +87,7 @@ public class PackageComponentScanner {
      * author: Neil <br>
      *
      * @param basePackage
-     * @return java.util.Set<java.lang.Class<?>>
+     * @return java.util.Set<java.lang.Class < ?>>
      */
     private static Set<BeanDefinition> doScan(String basePackage) throws IOException {
         ClassLoader classLoader = PackageComponentScanner.class.getClassLoader();
@@ -188,7 +185,7 @@ public class PackageComponentScanner {
      * date: 2022/5/9 14:33 <br>
      * author: Neil <br>
      *
-     * @param name     className
+     * @param name         className
      * @param classNameSet result class set
      */
     private static void addToClassSet(String name, Set<String> classNameSet) {
@@ -232,6 +229,7 @@ public class PackageComponentScanner {
 
     /**
      * 将class转为BeanDefinition
+     *
      * @param clazz
      * @return
      */
@@ -281,7 +279,8 @@ public class PackageComponentScanner {
      * @param recursionCount
      * @return boolean
      */
-    private static boolean isComponent(Class<?> clazz, int recursionCount, ArrayList<Annotation> definedAnnotations) {
+    private static boolean isComponent(Class<?> clazz, int recursionCount, ArrayList<Annotation> definedAnnotations,
+                                       Map<Class<? extends Annotation>, Map<String, Object>> metadataBox) {
 
         Annotation[] annotations = clazz.getAnnotations();
 
@@ -290,6 +289,9 @@ public class PackageComponentScanner {
             if (annotation.annotationType().getPackageName().startsWith("java.")) {
                 continue;
             }
+            // 处理待合并属性
+            AnnotationMergeUtil.merge(metadataBox, annotation);
+            // 将注解添加至注解列表
             definedAnnotations.add(annotation);
             // 需要使用Annotation.annotationType()获取注解的Class对象
             // 若使用.getClass，将得到Jdk动态代理的对象，而非类对象
@@ -299,7 +301,7 @@ public class PackageComponentScanner {
             if (recursionCount > MAX_RECURSION) {
                 return false;
             }
-            return isComponent(annotation.annotationType(), recursionCount + 1, definedAnnotations);
+            return isComponent(annotation.annotationType(), recursionCount + 1, definedAnnotations, metadataBox);
 
         }
 
@@ -317,7 +319,8 @@ public class PackageComponentScanner {
      * @return boolean
      */
     private static boolean isComponent(Class<?> clazz, ArrayList<Annotation> definedAnnotations) {
-        return isComponent(clazz, 1, definedAnnotations);
+        Map<Class<? extends Annotation>, Map<String, Object>> metadataBox = new HashMap<>();
+        return isComponent(clazz, 1, definedAnnotations, metadataBox);
     }
 
 }
