@@ -9,6 +9,7 @@
     <version>0.1-SNAPSHOT</version>
     <modules>
         <module>omega-core</module>
+        <module>omega-demo</module>
     </modules>
     <packaging>pom</packaging>
 
