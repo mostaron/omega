@@ -1,8 +1,4 @@
-package com.mostaron.omega.demo.event.util;
-
-import com.mostaron.omega.demo.event.event.OmegaEvent;
-import com.mostaron.omega.demo.event.listener.DemoEventListener;
-import com.mostaron.omega.demo.event.listener.OmegaEventListener;
+package com.mostaron.omega.core.util;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -86,19 +82,5 @@ public class GenericTypeUtil {
         }
     }
 
-    public static void main(String...args) throws ClassNotFoundException {
-        OmegaEventListener listener = new DemoEventListener();
-
-//        Arrays.stream(B.class.getGenericInterfaces()).forEach(type -> {
-//            System.out.println(type);
-//        });
-
-        System.out.println(listener.getClass());
-
-        System.out.println(getTargetClass(listener.getClass(), OmegaEvent.class));
-    }
-
-    interface A<T>{}
-    class B implements A<String>{};
 
 }

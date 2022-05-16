@@ -1,6 +1,7 @@
-package com.mostaron.omega.demo.event.listener;
+package com.mostaron.omega.core.event.multicaster;
 
-import com.mostaron.omega.demo.event.event.OmegaEvent;
+
+import com.mostaron.omega.core.event.OmegaEvent;
 
 /**
  * description: OmegaEventListener <br>

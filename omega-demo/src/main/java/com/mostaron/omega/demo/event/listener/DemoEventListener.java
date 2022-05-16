@@ -10,7 +10,7 @@ import java.util.Date;
  * author: Neil <br>
  * version: 0.1 <br>
  */
-public class DemoEventListener extends OmegaEventListener<DemoEvent>{
+public class DemoEventListener implements OmegaEventListener<DemoEvent>{
     @Override
     public void onEvent(DemoEvent event) {
         System.out.println(new Date(event.getTimestamp())+ "," + event.getSource().toString());
