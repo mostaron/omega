@@ -1,5 +1,6 @@
 package com.mostaron.omega.test.component;
 
+import com.mostaron.omega.core.annotation.Autowired;
 import com.mostaron.omega.core.annotation.Service;
 
 /**
@@ -10,4 +11,6 @@ import com.mostaron.omega.core.annotation.Service;
  */
 @Service("testService")
 public class TestService {
+    @Autowired
+    private TestComponent testComponent;
 }

@@ -224,6 +224,10 @@ public class PackageComponentScanner {
                 .map(PackageComponentScanner::parseBeanDefinition)
                 // 过滤非托管类
                 .filter(BeanDefinition::isComponent)
+                .map(beanDefinition -> {
+                    beanDefinition.setDependsOn(DependsResolver.getDepends(beanDefinition.getClazz()));
+                    return beanDefinition;
+                })
                 .collect(Collectors.toSet());
     }
 
@@ -322,5 +326,6 @@ public class PackageComponentScanner {
         Map<Class<? extends Annotation>, Map<String, Object>> metadataBox = new HashMap<>();
         return isComponent(clazz, 1, definedAnnotations, metadataBox);
     }
+
 
 }
