@@ -69,7 +69,8 @@ public class DependsResolver {
 
     /**
      * 获取有效的构造方法。
-     * 该方法优先获取带@Autowired标记的构造方法，若存在多于一个被@Autowired标记的构造方法，将抛出异常；
+     * 若该类仅有一个构造方法，默认返回该构造方法。
+     * 当存在多个构造方法时优先获取带@Autowired标记的构造方法，若存在多于一个被@Autowired标记的构造方法，将抛出异常；
      * 若不存在使用@Autowired标记的构造方法，则将获取默认无参构造方法。
      * description: getAvailableConstructor <br>
      * version: 1.0 <br>
@@ -83,14 +84,14 @@ public class DependsResolver {
 
         //获取当前Class的所有构造方法
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
-        Constructor<?> defaultConstructor = null;
+
+        if(constructors.length == 1) {
+            return constructors[0];
+        }
+
         Constructor<?> autowiredConstructor = null;
+
         for(Constructor<?> constructor: constructors) {
-            //判断是否为默认空参构造器
-            if(constructor.getParameterCount()==0 && null==defaultConstructor) {
-                defaultConstructor = constructor;
-                continue;
-            }
             //判断是否为被@Autowired注解过的构造方法
             if(null != constructor.getAnnotation(Autowired.class)){
                 if(null == autowiredConstructor) {
@@ -104,10 +105,8 @@ public class DependsResolver {
             }
         }
         //优先返回含Autowired注解的构造方法；
-        //若不存在，则尝试返回默认空参构造方法；
-        //若依然不存在，则尝试获取Class的默认构造方法，该方法有可能会抛出NoSuchMethodException
-        return null != autowiredConstructor? autowiredConstructor:
-                null != defaultConstructor? defaultConstructor: clazz.getDeclaredConstructor();
+        //依然不存在，则尝试获取Class的默认构造方法，该方法有可能会抛出NoSuchMethodException
+        return null != autowiredConstructor? autowiredConstructor: clazz.getDeclaredConstructor();
     }
 
 
