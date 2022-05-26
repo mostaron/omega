@@ -1,0 +1,7 @@
+# 2022-05-13
+参考观察者模式，结合Spring的事件广播机制，编写相应的Demo代码（omega-demo）。
+
+定义根事件类OmegaEvent，定义监听器抽象类OmegaEventListener。
+
+由于需要在Listener的子类上通过泛型对OmegaEvent的子类进行处理，封装GenericTypeUtil工具类，获取Listener实际监听的OmegaEvent实现。
+在MultiCaster广播器中，维护了事件Class和监听器列表的注册表，广播事件时，可以更快速的定位监听器列表并进行监听事件处理。

@@ -11,6 +11,14 @@
 
 本项目旨在通过实现一套支持IOC及AOP的简易组件，然后参照Spring全家桶，逐步迭代其功能，进而辅助理解Spring框架的源码及设计逻辑。
 
+## Spring学习笔记
+
+[Spring的AbstractApplicationContext.refresh都做了什么](document/learn_note/20220512_spring_context_refresh.md)
+
+[Spring的事件处理模型](document/learn_note/20220513_spring_event.md)
+
+[Spring中的Autowire装配及Bean的生成过程](document/learn_note/20220524_spring_beanCreation.md)
+
 ## 计划演进路线
 
 - 0.1 支持简单通过路径扫描，初始化并缓存被注册托管的Bean，提供工厂方法获取被托管的Bean，提供类似SpringBoot的启动器
