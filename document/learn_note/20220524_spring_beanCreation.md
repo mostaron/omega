@@ -373,4 +373,4 @@ protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 
 ```
 ## Spring获取及创建Bean的过程
-![Spring获取及创建Bean的过程](imgs/flowOfSpringBeanInitializing.png)
+![Spring获取及创建Bean的过程](../imgs/flowOfSpringBeanInitializing.png)
